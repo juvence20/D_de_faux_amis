@@ -6,7 +6,8 @@
 <title>Combien de faux amis as-tu ?</title>
 <meta name="description" content="Crée ton défi en 10 questions, envoie-le à tes amis et découvre qui te connaît vraiment.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<meta name="color-scheme" content="light">
 <!--
 CONFIGURATION (Option B, base de données gratuite Firebase Realtime Database) :
 1. console.firebase.google.com > Créer un projet > Build > Realtime Database > Créer.
@@ -60,24 +61,38 @@ input{width:100%;font:inherit;padding:14px;margin:6px 0;border:var(--bd);backgro
 .row{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:14px}
 .bar{height:14px;border:3px solid #111;background:#fff;margin-top:4px}.bar i{display:block;height:100%;background:var(--pk)}
 .demo{background:var(--yl);border:var(--bd);padding:10px;font-size:13px}
+html{background:#6dffb3}
+.top{display:flex;justify-content:space-between;align-items:center}
+.mc{display:block;margin:0 auto 8px;width:110px;height:110px;overflow:visible}
+.mcw{margin:-34px 0 14px 60px}.mcw .mc{margin:0;width:96px;height:96px}
+.rc{border:3px solid #111;padding:10px;margin-top:10px}.rc.ok{background:#b9ffd6}.rc.ko{background:#ffc2da}
+.cf{position:fixed;top:-16px;width:10px;height:14px;border:2px solid #111;z-index:9;pointer-events:none;animation:fall 2.2s ease-in forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(540deg)}}
+@keyframes bob{50%{transform:translateY(-6px)}}
+@keyframes hop{0%,100%{transform:translateY(0)}40%{transform:translateY(-16px) scale(.96,1.05)}}
+@keyframes sway{50%{transform:rotate(-4deg)}}
+@keyframes blink{0%,94%,100%{transform:scaleY(1)}97%{transform:scaleY(.1)}}
+@keyframes pop{from{opacity:0;transform:translateY(14px) scale(.97)}}
+@media(prefers-reduced-motion:no-preference){.mc{animation:bob 2s ease-in-out infinite;transform-origin:50% 90%}.mc.happy{animation:hop .8s ease-in-out infinite}.mc.sad{animation:sway 2.6s ease-in-out infinite}.mc .eyes{transform-box:fill-box;transform-origin:center;animation:blink 4s infinite}#app>*{animation:pop .35s backwards}}
+@media(prefers-reduced-motion:reduce){.cf{display:none}}
 </style>
 </head>
 <body>
 <div id="w">
-<div class="logo" data-act="home">faux amis ?</div>
-<div class="mq"><div><span>TON MEILLEUR POTE CONNAÎT TON PLAT PRÉFÉRÉ ? SPOILER : NON ✦ </span><span>TON MEILLEUR POTE CONNAÎT TA COULEUR PRÉFÉRÉ ? SPOILER : NON ✦ </span><span>TON MEILLEUR POTE CONNAÎT TON STYLE VESTIMENTAIRE PRÉFÉRÉ ? SPOILER : NON ✦ </span><span>TON MEILLEUR POTE CONNAÎT TON MOOD PRÉFÉRÉ ? SPOILER : NON ✦ </span></div></div>
+<div class="top"><div class="logo" data-act="home">faux amis ?</div><button class="btn sm" id="mu" data-act="mute" aria-label="Activer ou couper le son">🔊</button></div>
+<div class="mq"><div><span>TON MEILLEUR POTE CONNAÎT TA COULEUR PRÉFÉRÉE ? SPOILER : NON ✦ </span><span>TON MEILLEUR POTE CONNAÎT TON STYLE VESTIMENTAIRE PRÉFÉRÉ ? SPOILER : NON ✦ </span><span>TON MEILLEUR POTE CONNAÎT TON PLAT PRÉFÉRÉ ? SPOILER : NON ✦ </span><span>TON MEILLEUR POTE CONNAÎT TA PERSONNE PRÉFÉRÉ ? SPOILER : NON ✦ </span></div></div>
 <main id="app"></main>
 </div>
 <script>
-const FB='https://faux-amis-quiz-default-rtdb.europe-west1.firebasedatabase.app';
+const FB='https://faux-amis-quiz-default-rtdb.europe-west1.firebasedatabase.app'; // ex : 'https://mon-projet-default-rtdb.europe-west1.firebasedatabase.app'  
 const $=s=>document.querySelector(s),app=$('#app'),base=location.href.split('#')[0];
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const LS={get:k=>{try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 const U=FB.replace(/\/$/,'');
 const db={
- async get(p){if(!U)return LS.get('d/'+p);const r=await fetch(`${U}/${p}.json`);if(!r.ok)throw 0;return r.json()},
- async set(p,v){if(!U)return LS.set('d/'+p,v);const r=await fetch(`${U}/${p}.json`,{method:'PUT',body:JSON.stringify(v)});if(!r.ok)throw 0},
- async push(p,v){if(!U){const o=LS.get('d/'+p)||{};o['k'+Date.now()+Math.random()]=v;return LS.set('d/'+p,o)}await fetch(`${U}/${p}.json`,{method:'POST',body:JSON.stringify(v)})}
+ async get(p){if(!U)return LS.get('d/'+p);const r=await tf(`${U}/${p}.json`);if(!r.ok)throw 0;return r.json()},
+ async set(p,v){if(!U)return LS.set('d/'+p,v);const r=await tf(`${U}/${p}.json`,{method:'PUT',body:JSON.stringify(v)});if(!r.ok)throw 0},
+ async push(p,v){if(!U){const o=LS.get('d/'+p)||{};o['k'+Date.now()+Math.random()]=v;return LS.set('d/'+p,o)}await tf(`${U}/${p}.json`,{method:'POST',body:JSON.stringify(v)})}
 };
 const show=h=>{app.innerHTML=h;scrollTo(0,0)};
 const L='<div class="card"><h2>Chargement…</h2></div>',NF='<div class="card"><h2>Défi introuvable 🤷</h2><p>Ce lien est cassé ou le défi n\'existe plus.</p><button class="btn bk" data-act="home">Accueil</button></div>';
@@ -87,12 +102,20 @@ const BAND=[["Parfait inconnu 🫥","Tu connais {n} comme le voisin d'en face."]
 const band=s=>s<3?0:s<5?1:s<7?2:s<9?3:4;
 const CAT={amis:['Amis','🍻'],famille:['Famille','🏠'],collegues:['Collègues','💼'],couple:['Couple','💘']};
 const Qs={
-gen:[["Quel est le plat de fast-food préféré de {n} ?","Pizza|Burger|Frites|Tacos|Poulet|Glace"],["Quel emoji {n} utilise le plus ?","Rire aux larmes|Cœur rouge|Feu|Singe timide|Haussement d'épaules|Lunettes"],["À quelle heure {n} s'endort vraiment ?","Avant 22h|Vers minuit|Après 2h|Quand le téléphone lâche"],["Quel est le plus gros défaut de {n} ?","L'orgueil|La paresse|L'impatience|La jalousie|Le retard"],["Que fait {n} en premier le matin ?","Regarde son téléphone|Prie|Mange|Exercices physiques"],["Quelle est la plus grande peur de {n} ?","Les serpents|Le vide|Les araignées|La solitude|Perdre son téléphone"],["Quel super-pouvoir {n} choisirait ?","Voler|Invisibilité|Téléportation|Lire les pensées|Arrêter le temps"],["Que ferait {n} avec un million ?","Voyager|Acheter une maison|Tout dépenser en une semaine|Investir|Aider sa famille"],["Quel style de musique {n} écoute le plus ?","Zouk|Rap|DRILL|K-Pop|Rock"],["Que fait {n} un samedi soir ?","Sort avec des amis|Travailler|Dort|Joue aux jeux vidéo"]],
+gen:[["Quel est le plat de fast-food préféré de {n} ? 🍔","Pizza 🍕|Burger 🍔|Frites 🍟|Tacos 🌮|Poulet 🍗|Glace 🍦"],["Quel emoji {n} utilise le plus ?","😂 Rire aux larmes|❤️ Cœur rouge|🔥 Feu|🙈 Singe timide|🤷 Haussement d'épaules|😎 Lunettes"],["À quelle heure {n} s'endort vraiment ?","Avant 22h|Vers minuit|Après 2h|Quand le téléphone lâche"],["Quel est le plus gros défaut de {n} ?","L'orgueil|La paresse|L'impatience|La jalousie|Le retard"],["Que fait {n} en premier le matin ?","Regarde son téléphone|Appuie sur snooze|Mange|Prend sa douche"],["Quelle est la plus grande peur de {n} ?","Les serpents 🐍|Le vide|Les araignées 🕷️|La solitude|Perdre son téléphone"],["Quel super-pouvoir {n} choisirait ?","Voler|Invisibilité|Téléportation|Lire les pensées|Arrêter le temps"],["Que ferait {n} avec un million ?","Voyager|Acheter une maison|Tout dépenser en une semaine|Investir|Aider sa famille"],["Quel style de musique {n} écoute le plus ?","Afrobeats|Rap|R&B|Pop|Rock"],["Que fait {n} un samedi soir ?","Sort avec des amis|Regarde une série|Dort|Joue aux jeux vidéo"]],
 amis:[["Qui {n} appelle en premier quand ça va mal ?","Sa mère|Son meilleur ami|Son/sa partenaire|Personne"],["Quel secret {n} garde le moins bien ?","Ses crushs|Ses dépenses|Ses galères|Ceux des autres"],["Que fait {n} si tu es en retard ?","Attend patiemment|Râle en message|Part sans toi|Appelle dix fois"],["Quel genre d'ami est {n} ?","Le drôle|Le confident|Le fêtard|Le disparu (sauf pour manger)"],["Où {n} partirait avec vous ?","Dubaï|Paris|New York|Bali|Rester chez soi"]],
 famille:[["Qui est le préféré de la famille de {n} ?","{n} lui-même|Son frère|Sa sœur|Le chat"],["Quel plat de famille {n} adore ?","Riz|Pâtes|Ragoût|Poisson|Gâteau"],["Que dit souvent la mère de {n} ?","Range ta chambre|Tu as mangé ?|Dépêche-toi|Appelle en arrivant"],["Quelle fête de famille {n} préfère ?","Noël|Anniversaire|Mariage|Pâques"],["Avec qui {n} s'entend le mieux ?","Sa mère|Son père|Sa fratrie|Sa grand-mère"]],
 collegues:[["Que déteste {n} au travail ?","Les réunions|Les mails|Se lever tôt|Les collègues bruyants"],["Que boit {n} à la pause ?","Café|Thé|Eau|Jus|Rien"],["Que fait {n} à la pause déjeuner ?","Mange à son bureau|Sort au restaurant|Fait une sieste|Appelle sa famille"],["Quel est le rêve pro de {n} ?","Être son patron|Devenir directeur|Tout plaquer|Une promotion"],["Quel est le jour préféré de {n} ?","Lundi|Mercredi|Vendredi|Dimanche"]],
 couple:[["Quel cadeau ferait plaisir à {n} ?","Un bijou|Un parfum|Un voyage|Un téléphone|Un bon repas"],["Comment {n} réagit quand ça ne va pas ?","Boude|Parle de tout|Se renferme|Mange"],["Quel est le rendez-vous idéal pour {n} ?","Restaurant|Cinéma|Balade|Soirée à la maison"],["Quel est le premier message de {n} le matin ?","Bonjour mon cœur|Un meme|Un emoji|Aucun"],["Quelle est la plus grande qualité de {n} en couple ?","L'humour|La patience|La douceur|La fidélité"]]};
 
+const tf=(u,o)=>{const c=new AbortController(),t=setTimeout(()=>c.abort(),9000);return fetch(u,{...o,signal:c.signal}).finally(()=>clearTimeout(t))};
+const NET='<div class="card"><h2>Connexion impossible 📡</h2><p>Ton réseau bloque peut-être ce site. Essaie de passer du Wi-Fi aux données mobiles (ou l\'inverse), ou d\'utiliser un autre navigateur.</p><button class="btn bk" data-act="reload">Réessayer</button></div>';
+let mute=LS.get('mute')===1,AC;
+const snd=(f,d=.09,ty='square',v=.04,at=0)=>{if(mute)return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain(),s=AC.currentTime+at;o.type=ty;o.frequency.setValueAtTime(f,s);g.gain.setValueAtTime(v,s);g.gain.exponentialRampToValueAtTime(.0001,s+d);o.connect(g);g.connect(AC.destination);o.start(s);o.stop(s+d)}catch(e){}};
+const tune=n=>n.forEach((f,i)=>snd(f,.18,'triangle',.07,i*.12));
+const confetti=()=>{if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;for(let i=0;i<30;i++){const e=document.createElement('i');e.className='cf';e.style.cssText=`left:${Math.random()*100}vw;background:${['#ff3d8b','#ffd400','#3d6bff','#6dffb3'][i%4]};animation-delay:${Math.random()*.7}s`;document.body.append(e);setTimeout(()=>e.remove(),3200)}};
+const MO={hi:'<path d="M42 72q18 16 36 0" fill="none"/>',happy:'<path d="M40 68q20 26 40 0z" fill="#fff"/>',meh:'<path d="M46 78h28" fill="none"/>',sad:'<path d="M44 82q16-14 32 0" fill="none"/>',wow:'<ellipse cx="60" cy="78" rx="9" ry="12" fill="#fff"/>'};
+const mascot=(m='hi',c='#ffd400')=>`<svg class="mc ${m}" viewBox="0 0 120 120" aria-hidden="true"><g stroke="#111" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"><path d="M30 40L24 12L50 28zM90 40L96 12L70 28z" fill="${c}"/><rect x="18" y="26" width="84" height="80" rx="34" fill="${c}"/><circle cx="36" cy="72" r="7" fill="#ff3d8b" stroke="none" opacity=".55"/><circle cx="84" cy="72" r="7" fill="#ff3d8b" stroke="none" opacity=".55"/>${m==='happy'?'<path d="M36 60q7-10 14 0M70 60q7-10 14 0" fill="none"/>':'<g class="eyes" fill="#111" stroke="none"><circle cx="44" cy="58" r="5.5"/><circle cx="76" cy="58" r="5.5"/></g>'}${MO[m]}</g></svg>`;
 let S={},F={},CARD={};
 const prog=i=>`<div class="pg">${Array.from({length:10},(_,k)=>`<i class="${k<i?'d':''}"></i>`).join('')}</div>`;
 const shareBtns=(u,t)=>`<div class="lk">${esc(u)}</div><button class="btn" data-act="copy" data-v="${esc(u)}">Copier le lien</button><a class="btn bk" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(t+u)}">Envoyer sur WhatsApp</a>`+(navigator.share?`<button class="btn wh" data-act="share" data-v="${esc(u)}" data-t="${esc(t)}">Instagram, Snapchat…</button>`:'');
@@ -101,7 +124,7 @@ const bindName=()=>{const i=$('#nm');i.oninput=()=>$('#ct').textContent=i.value.
 
 function home(){
  const m=LS.get('mine')||[];
- show(`<div class="bub"><h1>Combien de <mark>faux amis</mark> as-tu ?</h1></div>
+ show(`<div class="bub"><h1>Combien de <mark>faux amis</mark> as-tu ?</h1></div><div class="mcw">${mascot('hi')}</div>
  <div class="card"><h2>Comment ça marche</h2>
  <div class="st"><i>1</i><div>Crée ton défi : choisis une catégorie, modifie les questions, réponds.</div></div>
  <div class="st"><i>2</i><div>Partage le lien sur WhatsApp, Instagram ou Snapchat.</div></div>
@@ -129,14 +152,14 @@ async function publish(){
  try{await db.set('quizzes/'+id,quiz)}catch(e){return show('<div class="card"><h2>Oups 😬</h2><p>Le défi n\'a pas pu être enregistré. Vérifie ta connexion.</p><button class="btn bk" data-act="pub">Réessayer</button></div>')}
  const m=LS.get('mine')||[];m.unshift({id,n:S.n});LS.set('mine',m.slice(0,10));
  CARD={top:S.n+' te défie',big:'Tu me connais vraiment ?',bs:92,sub:'10 questions. Zéro triche.'};
- show(`<div class="card center"><div class="emo">🎯</div><h2>Défi prêt !</h2><p>Plus tes amis répondent, plus tu trouves de faux amis.</p>${shareBtns(base+'#q='+id,'Tu me connais vraiment ? Teste-toi : ')}<button class="btn pk" data-act="story">📸 Carte pour ma story</button></div><button class="btn wh" data-act="go" data-v="#d=${id}">📊 Voir le classement</button>`);
+ show(`<div class="card center">${mascot('happy')}<h2>Défi prêt !</h2><p>Plus tes amis répondent, plus tu trouves de faux amis.</p>${shareBtns(base+'#q='+id,'Tu me connais vraiment ? Teste-toi : ')}<button class="btn pk" data-act="story">📸 Carte pour ma story</button></div><button class="btn wh" data-act="go" data-v="#d=${id}">📊 Voir le classement</button>`);
 }
 
 /* ----- Parcours d'un ami ----- */
 async function friend(id){
- if(!ok(id))return home();show(L);let q;try{q=await db.get('quizzes/'+id)}catch(e){}
- if(!q)return show(NF);F={id,q,i:0,a:[]};
- show(`<div class="card"><div class="emo">🕵️</div><h2>${esc(q.n)} te défie !</h2><p>10 questions sur ${esc(q.n)}. Ton score sera visible dans le classement.</p>${nameBox('fs')}</div>`);bindName();
+ if(!ok(id))return home();show(L);let q,er;try{q=await db.get('quizzes/'+id)}catch(e){er=1}
+ if(!q)return show(er?NET:NF);F={id,q,i:0,a:[]};
+ show(`<div class="card">${mascot('wow','#ff3d8b')}<h2>${esc(q.n)} te défie !</h2><p>10 questions sur ${esc(q.n)}. Ton score sera visible dans le classement.</p>${nameBox('fs')}</div>`);bindName();
 }
 function fq(){
  if(F.i>=10)return finish();const x=F.q.q[F.i];
@@ -150,12 +173,14 @@ async function finish(){
  try{await db.push('results/'+F.id,{n:F.name,s,t:Date.now()})}catch(e){}
  let r;try{r=await db.get('results/'+F.id)}catch(e){}
  CARD={top:'Mon score avec '+q.n,big:s+'/10',bs:250,sub:b[0]};
- show(`<div class="card center"><small>Ton score avec ${esc(q.n)}</small><br><div class="sk"><span class="score">${s}/10</span></div><h2>${b[0]}</h2><p>${esc(fill(b[1],q.n,q.g))}</p><button class="btn pk" data-act="story">📸 Partager en story</button></div><div class="card"><h2>Classement des amis de ${esc(q.n)}</h2>${board(r)}</div><button class="btn bl" data-act="new">✨ Créer mon propre défi</button>`);
+ const recap=`<div class="card"><h2>Ton récap : ${s} bonne${s>1?'s':''} réponse${s>1?'s':''} sur 10</h2>${q.q.map((x,k)=>{const g=F.a[k]===+x.a;return`<div class="rc ${g?'ok':'ko'}"><small>${k+1}. ${esc(x.t)}</small><br>${g?'✅':'❌'} Ta réponse : ${esc(x.o[F.a[k]])}${g?'':`<br>👉 Bonne réponse : ${esc(x.o[x.a])}`}</div>`}).join('')}</div>`;
+ setTimeout(()=>{tune([[392,330,262],[392,330,262],[440,523],[523,659,784],[523,659,784,1047]][band(s)]);if(band(s)>2)confetti()},350);
+ show(`<div class="card center">${mascot(['sad','sad','meh','happy','happy'][band(s)],['#8fb4ff','#ff9ec4','#ffd400','#ffd400','#6dffb3'][band(s)])}<small>Ton score avec ${esc(q.n)}</small><br><div class="sk"><span class="score">${s}/10</span></div><h2>${b[0]}</h2><p>${esc(fill(b[1],q.n,q.g))}</p><button class="btn pk" data-act="story">📸 Partager en story</button></div>${recap}<div class="card"><h2>Classement des amis de ${esc(q.n)}</h2>${board(r)}</div><button class="btn bl" data-act="new">✨ Créer mon propre défi</button>`);
 }
 async function dash(id){
- if(!ok(id))return home();show(L);let q,r;
- try{[q,r]=await Promise.all([db.get('quizzes/'+id),db.get('results/'+id)])}catch(e){}
- if(!q)return show(NF);
+ if(!ok(id))return home();show(L);let q,r,er;
+ try{[q,r]=await Promise.all([db.get('quizzes/'+id),db.get('results/'+id)])}catch(e){er=1}
+ if(!q)return show(er?NET:NF);
  show(`<div class="card"><h2>Classement de ${esc(q.n)}</h2>${board(r)}</div><div class="card"><h2>Renvoie le défi</h2>${shareBtns(base+'#q='+id,'Tu me connais vraiment ? Teste-toi : ')}</div><button class="btn wh" data-act="reload">🔄 Actualiser</button><button class="btn bl" data-act="new">✨ Créer mon propre défi</button>`);
 }
 
@@ -189,13 +214,15 @@ const A={
  fs:()=>{const v=$('#nm').value.trim();if(!v)return $('#nm').focus();F.name=v;fq()},
  fa:b=>{F.a.push(+b.dataset.j);F.i++;fq()},
  story:()=>card(CARD),
+ mute:()=>{mute=!mute;LS.set('mute',mute?1:0);$('#mu').textContent=mute?'🔇':'🔊';snd(660,.1)},
  reload:()=>route(),
  copy:b=>navigator.clipboard.writeText(b.dataset.v).then(()=>b.textContent='Lien copié ✓',()=>prompt('Copie ce lien :',b.dataset.v)),
  share:b=>navigator.share({text:b.dataset.t,url:b.dataset.v}).catch(()=>{})
 };
-document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&A[b.dataset.act])A[b.dataset.act](b)});
+document.addEventListener('click',e=>{const t=e.target.closest('.opt,.tile,.btn,.x');if(t&&t.id!=='mu')snd(t.matches('.opt,.tile')?660:440,.07);const b=e.target.closest('[data-act]');if(b&&A[b.dataset.act])A[b.dataset.act](b)});
 function route(){const h=location.hash;if(h.startsWith('#q='))return friend(h.slice(3));if(h.startsWith('#d='))return dash(h.slice(3));home()}
 addEventListener('hashchange',route);
+$('#mu').textContent=mute?'🔇':'🔊';
 route();
 </script>
 </body>
