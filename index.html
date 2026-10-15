@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Combien de faux amis as-tu ?</title>
+<meta name="description" content="Crée ton défi en 10 questions, envoie-le à tes amis et découvre qui te connaît vraiment.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<!--
+CONFIGURATION (Option B, base de données gratuite Firebase Realtime Database) :
+1. console.firebase.google.com > Créer un projet > Build > Realtime Database > Créer.
+2. Onglet Règles, colle ceci puis Publier :
+{"rules":{"quizzes":{"$id":{".read":true,".write":"!data.exists()"}},"results":{"$id":{".read":true,"$r":{".write":"!data.exists()"}}}}}
+3. Copie l'URL de la base (https://xxx.firebaseio.com ou ...firebasedatabase.app) dans FB ci-dessous.
+Tant que FB est vide, le site tourne en mode démo (données locales à l'appareil).
+-->
+<style>
+:root{--bg:#6dffb3;--pk:#ff3d8b;--yl:#ffd400;--bl:#3d6bff;--bd:4px solid #111;--sh:6px 6px 0 #111}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(#1112 1.5px,transparent 1.6px) 0 0/18px 18px var(--bg);color:#111;font:700 16px/1.4 'Space Grotesk',system-ui,sans-serif}
+h1,h2,.btn,.score,.logo{font-family:'Archivo Black','Arial Black',sans-serif;font-weight:400}
+#w{max-width:520px;margin:0 auto;padding:0 16px 48px;overflow-x:hidden}
+.logo{display:inline-block;background:var(--yl);border:var(--bd);box-shadow:4px 4px 0 #111;padding:6px 14px;font-size:20px;transform:rotate(-3deg);cursor:pointer;margin:18px 0}
+.mq{overflow:hidden;background:#111;color:#fff;margin:0 -16px 28px;transform:rotate(-1.5deg);padding:8px 0;white-space:nowrap}
+.mq div{display:inline-block;animation:mq 24s linear infinite}
+@keyframes mq{to{transform:translateX(-50%)}}
+@media(prefers-reduced-motion:reduce){.mq div{animation:none}}
+h1{font-size:clamp(30px,9vw,42px);line-height:1.08;margin:0}
+h2{font-size:22px;line-height:1.2;margin:.1em 0 .6em}
+p{margin:.3em 0 .8em}
+mark{background:var(--pk);color:#fff;padding:0 8px;display:inline-block;transform:rotate(-2deg)}
+.bub{background:#fff;border:var(--bd);border-radius:32px;padding:24px;box-shadow:var(--sh);position:relative;margin-bottom:46px}
+.bub:after{content:'';position:absolute;bottom:-21px;left:50px;width:36px;height:36px;background:#fff;border-right:var(--bd);border-bottom:var(--bd);transform:rotate(45deg)}
+.card{background:#fff;border:var(--bd);box-shadow:var(--sh);padding:18px;margin:0 0 24px}
+.btn{display:block;width:100%;font-size:17px;color:#111;text-decoration:none;text-align:center;background:var(--yl);border:var(--bd);box-shadow:var(--sh);padding:15px;margin:14px 0 0;cursor:pointer}
+.btn:active,.opt:active,.tile:active{transform:translate(4px,4px);box-shadow:2px 2px 0 #111}
+.btn.sm{width:auto;margin:0;padding:6px 12px;font-size:14px;box-shadow:3px 3px 0 #111}
+.pk{background:var(--pk);color:#fff}.bl{background:var(--bl);color:#fff}.bk{background:#111;color:#fff}.wh{background:#fff}
+.btn:focus-visible,input:focus-visible,.opt:focus-visible,.tile:focus-visible{outline:4px solid var(--bl);outline-offset:3px}
+input{width:100%;font:inherit;padding:14px;margin:6px 0;border:var(--bd);background:#fff}
+.opt{display:block;width:100%;text-align:left;font:inherit;background:#fff;border:var(--bd);padding:13px 14px;margin:10px 0;cursor:pointer;box-shadow:4px 4px 0 #111}
+.opt:hover{background:var(--yl)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.tile{font:inherit;background:#fff;border:var(--bd);box-shadow:var(--sh);padding:18px 8px;cursor:pointer;font-size:17px}
+.tile span{display:block;font-size:46px;margin-bottom:6px}
+.tile:hover{background:var(--yl);transform:rotate(-2deg)}
+.pg{display:flex;gap:4px;margin-bottom:16px}.pg i{flex:1;height:16px;border:3px solid #111;background:#fff}.pg i.d{background:var(--pk)}
+.hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.st{display:flex;gap:14px;align-items:center;margin:14px 0}
+.st i{flex:none;width:42px;height:42px;display:grid;place-items:center;font:normal 20px 'Archivo Black',sans-serif;color:#fff;border:var(--bd);background:var(--bl);transform:rotate(-6deg)}
+.st:nth-of-type(even) i{background:var(--pk);transform:rotate(6deg)}.st:nth-of-type(3) i{background:#ff6a00}
+.er{display:flex;gap:8px;align-items:center}.er input{flex:1}.x{width:44px;height:44px;border:var(--bd);background:var(--pk);color:#fff;font:inherit;cursor:pointer}
+.lk{word-break:break-all;font-size:13px;border:3px dashed #111;padding:10px;max-height:62px;overflow:hidden}
+.center{text-align:center}.emo{font-size:60px;line-height:1}
+.sk{display:inline-block;background:var(--pk);color:#fff;border:var(--bd);box-shadow:var(--sh);padding:6px 22px;transform:rotate(-3deg);margin:14px 0}
+.score{font-size:84px;line-height:1.1}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+.stats div{border:var(--bd);background:var(--yl);padding:8px;text-align:center;font-size:12px}.stats b{display:block;font:normal 26px 'Archivo Black',sans-serif}
+.row{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:14px}
+.bar{height:14px;border:3px solid #111;background:#fff;margin-top:4px}.bar i{display:block;height:100%;background:var(--pk)}
+.demo{background:var(--yl);border:var(--bd);padding:10px;font-size:13px}
+</style>
+</head>
+<body>
+<div id="w">
+<div class="logo" data-act="home">faux amis ?</div>
+<div class="mq"><div><span>TON MEILLEUR POTE CONNAÎT TON PLAT PRÉFÉRÉ ? SPOILER : NON ✦ </span><span>TON MEILLEUR POTE CONNAÎT TA COULEUR PRÉFÉRÉ ? SPOILER : NON ✦ </span><span>TON MEILLEUR POTE CONNAÎT TON STYLE VESTIMENTAIRE PRÉFÉRÉ ? SPOILER : NON ✦ </span><span>TON MEILLEUR POTE CONNAÎT TON MOOD PRÉFÉRÉ ? SPOILER : NON ✦ </span></div></div>
+<main id="app"></main>
+</div>
+<script>
+const FB='https://faux-amis-quiz-default-rtdb.europe-west1.firebasedatabase.app';
+const $=s=>document.querySelector(s),app=$('#app'),base=location.href.split('#')[0];
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const LS={get:k=>{try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const U=FB.replace(/\/$/,'');
+const db={
+ async get(p){if(!U)return LS.get('d/'+p);const r=await fetch(`${U}/${p}.json`);if(!r.ok)throw 0;return r.json()},
+ async set(p,v){if(!U)return LS.set('d/'+p,v);const r=await fetch(`${U}/${p}.json`,{method:'PUT',body:JSON.stringify(v)});if(!r.ok)throw 0},
+ async push(p,v){if(!U){const o=LS.get('d/'+p)||{};o['k'+Date.now()+Math.random()]=v;return LS.set('d/'+p,o)}await fetch(`${U}/${p}.json`,{method:'POST',body:JSON.stringify(v)})}
+};
+const show=h=>{app.innerHTML=h;scrollTo(0,0)};
+const L='<div class="card"><h2>Chargement…</h2></div>',NF='<div class="card"><h2>Défi introuvable 🤷</h2><p>Ce lien est cassé ou le défi n\'existe plus.</p><button class="btn bk" data-act="home">Accueil</button></div>';
+const ok=id=>/^[a-z0-9]{3,12}$/i.test(id),sh=a=>[...a].sort(()=>Math.random()-.5);
+const fill=(t,n,g)=>t.replace(/\{n\}/g,n).replace(/\{Il\}/g,g==='f'?'Elle':'Il');
+const BAND=[["Parfait inconnu 🫥","Tu connais {n} comme le voisin d'en face."],["Faux ami 🐍","{n} commence sérieusement à douter de toi."],["Pote moyen 😬","Pas mal, mais pas de quoi trinquer."],["Vrai ami 🤝","{n} peut compter sur toi. Presque toujours."],["Âme sœur 👑","Tu connais {n} par cœur. {Il} peut dormir tranquille."]];
+const band=s=>s<3?0:s<5?1:s<7?2:s<9?3:4;
+const CAT={amis:['Amis','🍻'],famille:['Famille','🏠'],collegues:['Collègues','💼'],couple:['Couple','💘']};
+const Qs={
+gen:[["Quel est le plat de fast-food préféré de {n} ?","Pizza|Burger|Frites|Tacos|Poulet|Glace"],["Quel emoji {n} utilise le plus ?","Rire aux larmes|Cœur rouge|Feu|Singe timide|Haussement d'épaules|Lunettes"],["À quelle heure {n} s'endort vraiment ?","Avant 22h|Vers minuit|Après 2h|Quand le téléphone lâche"],["Quel est le plus gros défaut de {n} ?","L'orgueil|La paresse|L'impatience|La jalousie|Le retard"],["Que fait {n} en premier le matin ?","Regarde son téléphone|Prie|Mange|Exercices physiques"],["Quelle est la plus grande peur de {n} ?","Les serpents|Le vide|Les araignées|La solitude|Perdre son téléphone"],["Quel super-pouvoir {n} choisirait ?","Voler|Invisibilité|Téléportation|Lire les pensées|Arrêter le temps"],["Que ferait {n} avec un million ?","Voyager|Acheter une maison|Tout dépenser en une semaine|Investir|Aider sa famille"],["Quel style de musique {n} écoute le plus ?","Zouk|Rap|DRILL|K-Pop|Rock"],["Que fait {n} un samedi soir ?","Sort avec des amis|Travailler|Dort|Joue aux jeux vidéo"]],
+amis:[["Qui {n} appelle en premier quand ça va mal ?","Sa mère|Son meilleur ami|Son/sa partenaire|Personne"],["Quel secret {n} garde le moins bien ?","Ses crushs|Ses dépenses|Ses galères|Ceux des autres"],["Que fait {n} si tu es en retard ?","Attend patiemment|Râle en message|Part sans toi|Appelle dix fois"],["Quel genre d'ami est {n} ?","Le drôle|Le confident|Le fêtard|Le disparu (sauf pour manger)"],["Où {n} partirait avec vous ?","Dubaï|Paris|New York|Bali|Rester chez soi"]],
+famille:[["Qui est le préféré de la famille de {n} ?","{n} lui-même|Son frère|Sa sœur|Le chat"],["Quel plat de famille {n} adore ?","Riz|Pâtes|Ragoût|Poisson|Gâteau"],["Que dit souvent la mère de {n} ?","Range ta chambre|Tu as mangé ?|Dépêche-toi|Appelle en arrivant"],["Quelle fête de famille {n} préfère ?","Noël|Anniversaire|Mariage|Pâques"],["Avec qui {n} s'entend le mieux ?","Sa mère|Son père|Sa fratrie|Sa grand-mère"]],
+collegues:[["Que déteste {n} au travail ?","Les réunions|Les mails|Se lever tôt|Les collègues bruyants"],["Que boit {n} à la pause ?","Café|Thé|Eau|Jus|Rien"],["Que fait {n} à la pause déjeuner ?","Mange à son bureau|Sort au restaurant|Fait une sieste|Appelle sa famille"],["Quel est le rêve pro de {n} ?","Être son patron|Devenir directeur|Tout plaquer|Une promotion"],["Quel est le jour préféré de {n} ?","Lundi|Mercredi|Vendredi|Dimanche"]],
+couple:[["Quel cadeau ferait plaisir à {n} ?","Un bijou|Un parfum|Un voyage|Un téléphone|Un bon repas"],["Comment {n} réagit quand ça ne va pas ?","Boude|Parle de tout|Se renferme|Mange"],["Quel est le rendez-vous idéal pour {n} ?","Restaurant|Cinéma|Balade|Soirée à la maison"],["Quel est le premier message de {n} le matin ?","Bonjour mon cœur|Un meme|Un emoji|Aucun"],["Quelle est la plus grande qualité de {n} en couple ?","L'humour|La patience|La douceur|La fidélité"]]};
+
+let S={},F={},CARD={};
+const prog=i=>`<div class="pg">${Array.from({length:10},(_,k)=>`<i class="${k<i?'d':''}"></i>`).join('')}</div>`;
+const shareBtns=(u,t)=>`<div class="lk">${esc(u)}</div><button class="btn" data-act="copy" data-v="${esc(u)}">Copier le lien</button><a class="btn bk" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(t+u)}">Envoyer sur WhatsApp</a>`+(navigator.share?`<button class="btn wh" data-act="share" data-v="${esc(u)}" data-t="${esc(t)}">Instagram, Snapchat…</button>`:'');
+const nameBox=(act)=>`<input id="nm" maxlength="15" placeholder="Prénom…" autocomplete="off"><small id="ct">0/15</small><button class="btn bk" data-act="${act}">Continuer</button>`;
+const bindName=()=>{const i=$('#nm');i.oninput=()=>$('#ct').textContent=i.value.length+'/15';i.focus()};
+
+function home(){
+ const m=LS.get('mine')||[];
+ show(`<div class="bub"><h1>Combien de <mark>faux amis</mark> as-tu ?</h1></div>
+ <div class="card"><h2>Comment ça marche</h2>
+ <div class="st"><i>1</i><div>Crée ton défi : choisis une catégorie, modifie les questions, réponds.</div></div>
+ <div class="st"><i>2</i><div>Partage le lien sur WhatsApp, Instagram ou Snapchat.</div></div>
+ <div class="st"><i>3</i><div>Regarde le classement : qui te connaît, qui fait semblant.</div></div>
+ <button class="btn pk" data-act="new">Créer mon défi</button></div>`+
+ (m.length?`<div class="card"><h2>Mes défis</h2>${m.map(x=>`<button class="btn wh" data-act="go" data-v="#d=${x.id}">Classement de ${esc(x.n)}</button>`).join('')}</div>`:'')+
+ (U?'':'<div class="demo">Mode démo : les données restent sur cet appareil. Ajoute ton URL Firebase dans le fichier pour partager entre appareils.</div>'));
+}
+
+/* ----- Création du défi ----- */
+function sName(){S={};show(`<div class="card"><h2>Quel est ton prénom ?</h2>${nameBox('ng')}</div>`);bindName()}
+function sGender(){show(`<div class="card"><h2>Salut ${esc(S.n)} 👋<br>Choisis ton genre</h2><div class="g2"><button class="tile" data-act="g" data-v="m"><span>🧔</span>Masculin</button><button class="tile" data-act="g" data-v="f"><span>👩</span>Féminin</button></div></div>`)}
+function sCat(){show(`<div class="card"><h2>Pour quel type d'amitié ?</h2><div class="g2">${Object.entries(CAT).map(([k,v])=>`<button class="tile" data-act="c" data-v="${k}"><span>${v[1]}</span>${v[0]}</button>`).join('')}</div></div>`)}
+const mk=q=>({t:fill(q[0],S.n,S.g),o:q[1].replace(/\{n\}/g,S.n).split('|')});
+function draw(c){const g=sh(Qs.gen);S.qs=sh([...sh(Qs[c]).slice(0,5),...g.slice(0,5)]).map(mk);S.sp=g.slice(5);S.a=[];S.i=0}
+function sQ(){
+ if(S.i>=10)return publish();const q=S.qs[S.i];
+ show(`${prog(S.i)}<div class="card"><div class="hd"><small>Question ${S.i+1} sur 10</small><button class="btn sm" data-act="edit">✏️ Modifier</button></div><h2>${esc(q.t)}</h2>${q.o.map((o,j)=>`<button class="opt" data-act="ans" data-j="${j}">${esc(o)}</button>`).join('')}<small>Choisis TA vraie réponse.</small></div>${S.sp.length?'<button class="btn wh" data-act="skip">Passer la question 🔁</button>':''}`);
+}
+function edit(){const q=S.qs[S.i];show(`<div class="card"><h2>Modifier la question</h2><input id="et" value="${esc(q.t)}" maxlength="90">${q.o.map(o=>`<div class="er"><input value="${esc(o)}" maxlength="40"><button class="x" data-act="del" aria-label="Supprimer">✕</button></div>`).join('')}${q.o.length<6?'<button class="btn wh" data-act="add">+ Ajouter une option</button>':''}<button class="btn bk" data-act="ok">Valider</button></div>`)}
+const col=()=>{const q=S.qs[S.i];q.t=$('#et').value.trim()||q.t;q.o=[...app.querySelectorAll('.er input')].map(i=>i.value.trim())};
+async function publish(){
+ show(L);const id=Math.random().toString(36).slice(2,9);
+ const quiz={n:S.n,g:S.g,c:S.c,q:S.qs.map((q,i)=>({t:q.t,o:q.o,a:S.a[i]}))};
+ try{await db.set('quizzes/'+id,quiz)}catch(e){return show('<div class="card"><h2>Oups 😬</h2><p>Le défi n\'a pas pu être enregistré. Vérifie ta connexion.</p><button class="btn bk" data-act="pub">Réessayer</button></div>')}
+ const m=LS.get('mine')||[];m.unshift({id,n:S.n});LS.set('mine',m.slice(0,10));
+ CARD={top:S.n+' te défie',big:'Tu me connais vraiment ?',bs:92,sub:'10 questions. Zéro triche.'};
+ show(`<div class="card center"><div class="emo">🎯</div><h2>Défi prêt !</h2><p>Plus tes amis répondent, plus tu trouves de faux amis.</p>${shareBtns(base+'#q='+id,'Tu me connais vraiment ? Teste-toi : ')}<button class="btn pk" data-act="story">📸 Carte pour ma story</button></div><button class="btn wh" data-act="go" data-v="#d=${id}">📊 Voir le classement</button>`);
+}
+
+/* ----- Parcours d'un ami ----- */
+async function friend(id){
+ if(!ok(id))return home();show(L);let q;try{q=await db.get('quizzes/'+id)}catch(e){}
+ if(!q)return show(NF);F={id,q,i:0,a:[]};
+ show(`<div class="card"><div class="emo">🕵️</div><h2>${esc(q.n)} te défie !</h2><p>10 questions sur ${esc(q.n)}. Ton score sera visible dans le classement.</p>${nameBox('fs')}</div>`);bindName();
+}
+function fq(){
+ if(F.i>=10)return finish();const x=F.q.q[F.i];
+ show(`${prog(F.i)}<div class="card"><small>Question ${F.i+1} sur 10</small><h2>${esc(x.t)}</h2>${x.o.map((o,j)=>`<button class="opt" data-act="fa" data-j="${j}">${esc(o)}</button>`).join('')}</div>`);
+}
+const board=r=>{const a=Object.values(r||{}).sort((x,y)=>y.s-x.s||x.t-y.t);if(!a.length)return'<p>Personne n\'a encore répondu.</p>';
+ const avg=(a.reduce((t,x)=>t+x.s,0)/a.length).toFixed(1);
+ return`<div class="stats"><div><b>${a.length}</b>participants</div><div><b>${avg}</b>moyenne /10</div><div><b>${a.filter(x=>x.s<5).length}</b>faux amis</div></div>`+a.map((x,i)=>`<div class="row"><span>${['🥇','🥈','🥉'][i]||'#'+(i+1)} ${esc(x.n)}<br><small>${BAND[band(x.s)][0]}</small></span><b>${x.s}/10</b></div><div class="bar"><i style="width:${x.s*10}%"></i></div>`).join('')};
+async function finish(){
+ show(L);const q=F.q,s=q.q.filter((x,k)=>+x.a===F.a[k]).length,b=BAND[band(s)];
+ try{await db.push('results/'+F.id,{n:F.name,s,t:Date.now()})}catch(e){}
+ let r;try{r=await db.get('results/'+F.id)}catch(e){}
+ CARD={top:'Mon score avec '+q.n,big:s+'/10',bs:250,sub:b[0]};
+ show(`<div class="card center"><small>Ton score avec ${esc(q.n)}</small><br><div class="sk"><span class="score">${s}/10</span></div><h2>${b[0]}</h2><p>${esc(fill(b[1],q.n,q.g))}</p><button class="btn pk" data-act="story">📸 Partager en story</button></div><div class="card"><h2>Classement des amis de ${esc(q.n)}</h2>${board(r)}</div><button class="btn bl" data-act="new">✨ Créer mon propre défi</button>`);
+}
+async function dash(id){
+ if(!ok(id))return home();show(L);let q,r;
+ try{[q,r]=await Promise.all([db.get('quizzes/'+id),db.get('results/'+id)])}catch(e){}
+ if(!q)return show(NF);
+ show(`<div class="card"><h2>Classement de ${esc(q.n)}</h2>${board(r)}</div><div class="card"><h2>Renvoie le défi</h2>${shareBtns(base+'#q='+id,'Tu me connais vraiment ? Teste-toi : ')}</div><button class="btn wh" data-act="reload">🔄 Actualiser</button><button class="btn bl" data-act="new">✨ Créer mon propre défi</button>`);
+}
+
+/* ----- Carte de story (PNG 1080×1920) ----- */
+async function card(o){
+ try{await document.fonts.load('60px "Archivo Black"')}catch(e){}
+ const c=document.createElement('canvas');c.width=1080;c.height=1920;const x=c.getContext('2d'),F2='"Archivo Black","Arial Black",sans-serif';
+ x.fillStyle='#6dffb3';x.fillRect(0,0,1080,1920);
+ x.fillStyle='#111';x.fillRect(115,455,880,940);x.fillStyle='#fff';x.fillRect(85,425,880,940);x.strokeStyle='#111';x.lineWidth=12;x.strokeRect(85,425,880,940);
+ x.textAlign='center';x.fillStyle='#111';
+ const wrap=(t,y,sz,lh)=>{x.font=sz+'px '+F2;let l='';for(const w of t.split(' ')){const tt=l+w+' ';if(x.measureText(tt).width>780&&l){x.fillText(l.trim(),525,y);l=w+' ';y+=lh}else l=tt}x.fillText(l.trim(),525,y);return y};
+ wrap(o.top,560,52,64);x.fillStyle='#ff3d8b';const e=wrap(o.big,o.bs>200?920:850,o.bs,o.bs+8);x.fillStyle='#111';wrap(o.sub,e+110,60,72);
+ x.fillStyle='#111';wrap('Toi aussi, trouve tes faux amis',1560,52,64);x.font='34px '+F2;x.fillText(location.host||'',540,1680);
+ c.toBlob(b=>{const f=new File([b],'faux-amis.png',{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[f]}))navigator.share({files:[f]}).catch(()=>{});else{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='faux-amis.png';a.click()}});
+}
+
+/* ----- Actions & routeur ----- */
+const A={
+ go:b=>location.hash=b.dataset.v,
+ home:()=>{history.replaceState(null,'',location.pathname+location.search);home()},
+ new:()=>{history.replaceState(null,'',location.pathname+location.search);sName()},
+ ng:()=>{const v=$('#nm').value.trim();if(!v)return $('#nm').focus();S.n=v;sGender()},
+ g:b=>{S.g=b.dataset.v;sCat()},
+ c:b=>{S.c=b.dataset.v;draw(S.c);sQ()},
+ ans:b=>{S.a[S.i]=+b.dataset.j;S.i++;sQ()},
+ skip:()=>{S.qs[S.i]=mk(S.sp.shift());sQ()},
+ edit,add:()=>{col();const q=S.qs[S.i];if(q.o.length<6)q.o.push('');edit()},
+ del:b=>{col();const q=S.qs[S.i],k=[...app.querySelectorAll('.er')].indexOf(b.closest('.er'));if(q.o.length>2)q.o.splice(k,1);edit()},
+ ok:()=>{col();const q=S.qs[S.i];q.o=q.o.filter(Boolean);while(q.o.length<2)q.o.push('Autre '+q.o.length);sQ()},
+ pub:publish,
+ fs:()=>{const v=$('#nm').value.trim();if(!v)return $('#nm').focus();F.name=v;fq()},
+ fa:b=>{F.a.push(+b.dataset.j);F.i++;fq()},
+ story:()=>card(CARD),
+ reload:()=>route(),
+ copy:b=>navigator.clipboard.writeText(b.dataset.v).then(()=>b.textContent='Lien copié ✓',()=>prompt('Copie ce lien :',b.dataset.v)),
+ share:b=>navigator.share({text:b.dataset.t,url:b.dataset.v}).catch(()=>{})
+};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&A[b.dataset.act])A[b.dataset.act](b)});
+function route(){const h=location.hash;if(h.startsWith('#q='))return friend(h.slice(3));if(h.startsWith('#d='))return dash(h.slice(3));home()}
+addEventListener('hashchange',route);
+route();
+</script>
+</body>
+</html>
